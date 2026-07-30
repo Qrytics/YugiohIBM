@@ -207,6 +207,9 @@ export interface PlayerState {
   health: number;
   maxHealth: number;
 
+  // Fatigue tracking
+  fatigueCount: number;
+
   // Mana (Hearthstone-style)
   maxMana: number; // Max mana crystals
   currentMana: number; // Available mana this turn

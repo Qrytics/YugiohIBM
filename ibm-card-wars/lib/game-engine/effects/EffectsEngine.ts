@@ -27,9 +27,121 @@ export class EffectsEngine {
       case 'destroy':
         this.resolveDestroy(state, effect, source);
         break;
-      // TODO: Implement more effect types
+      case 'freeze':
+        this.resolveFreeze(state, effect, source);
+        break;
+      case 'silence':
+        this.resolveSilence(state, effect, source);
+        break;
+      case 'taunt':
+        this.resolveTaunt(state, effect, source);
+        break;
+      case 'divine_shield':
+        this.resolveDivineShield(state, effect, source);
+        break;
+      case 'lifesteal':
+        this.resolveLifesteal(state, effect, source);
+        break;
       default:
         console.warn(`Unimplemented effect type: ${effect.type}`);
+    }
+  }
+
+  /**
+   * Freeze target(s) - Skip next attack
+   */
+  private static resolveFreeze(
+    state: GameState,
+    effect: Effect,
+    source?: BoardCard
+  ): void {
+    const targets = this.findTargets(state, effect, source);
+
+    for (const target of targets) {
+      if ('currentHealth' in target) {
+        const card = target as BoardCard;
+        card.isFrozen = true;
+        card.statusEffects.push({ type: 'frozen', duration: 1 });
+      }
+    }
+  }
+
+  /**
+   * Silence target(s) - Remove all abilities
+   */
+  private static resolveSilence(
+    state: GameState,
+    effect: Effect,
+    source?: BoardCard
+  ): void {
+    const targets = this.findTargets(state, effect, source);
+
+    for (const target of targets) {
+      if ('currentHealth' in target) {
+        const card = target as BoardCard;
+        card.isSilenced = true;
+        card.statusEffects.push({ type: 'silenced' });
+
+        // Remove all status effects and buffs
+        card.statusEffects = card.statusEffects.filter(e => e.type === 'silenced');
+        card.buffs = [];
+        card.hasTaunt = false;
+        card.hasDivineShield = false;
+      }
+    }
+  }
+
+  /**
+   * Grant Taunt - Must be attacked first
+   */
+  private static resolveTaunt(
+    state: GameState,
+    effect: Effect,
+    source?: BoardCard
+  ): void {
+    const targets = this.findTargets(state, effect, source);
+
+    for (const target of targets) {
+      if ('currentHealth' in target) {
+        const card = target as BoardCard;
+        card.hasTaunt = true;
+      }
+    }
+  }
+
+  /**
+   * Grant Divine Shield - Block one hit
+   */
+  private static resolveDivineShield(
+    state: GameState,
+    effect: Effect,
+    source?: BoardCard
+  ): void {
+    const targets = this.findTargets(state, effect, source);
+
+    for (const target of targets) {
+      if ('currentHealth' in target) {
+        const card = target as BoardCard;
+        card.hasDivineShield = true;
+      }
+    }
+  }
+
+  /**
+   * Lifesteal - Heal when dealing damage
+   */
+  private static resolveLifesteal(
+    state: GameState,
+    effect: Effect,
+    source?: BoardCard
+  ): void {
+    // Lifesteal is a passive effect, applied during combat
+    // Mark the source card as having lifesteal
+    if (source) {
+      // Add lifesteal keyword if not already present
+      if (!source.keywords.includes('lifesteal')) {
+        source.keywords.push('lifesteal');
+      }
     }
   }
 
@@ -281,6 +393,38 @@ export class EffectsEngine {
       lane.cards[card.playerIndex] = null;
     }
 
-    // TODO: Trigger deathrattle
+    // Trigger deathrattle if card has it
+    if (card.deathrattle && !card.isSilenced) {
+      this.resolve(state, card.deathrattle, card);
+    }
+  }
+
+  /**
+   * Apply tool card effect (one-time use)
+   */
+  static applyToolEffect(
+    state: GameState,
+    card: any,
+    playerIndex: number,
+    laneIndex?: number
+  ): void {
+    // Tools have immediate effects defined in their battlecry
+    if (card.battlecry) {
+      this.resolve(state, card.battlecry);
+    }
+  }
+
+  /**
+   * Trigger incident card effect (immediate event)
+   */
+  static triggerIncident(
+    state: GameState,
+    card: any,
+    playerIndex: number
+  ): void {
+    // Incidents have immediate effects defined in their battlecry
+    if (card.battlecry) {
+      this.resolve(state, card.battlecry);
+    }
   }
 }

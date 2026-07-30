@@ -404,16 +404,59 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const matchInfo = this.activeMatches.get(matchId);
     if (!matchInfo) return;
 
-    // Notify opponent
-    const opponentSocketId =
-      matchInfo.player1SocketId === socketId
-        ? matchInfo.player2SocketId
-        : matchInfo.player1SocketId;
+    const isPlayer1 = matchInfo.player1SocketId === socketId;
+    const disconnectedPlayerId = isPlayer1
+      ? matchInfo.player1Id
+      : matchInfo.player2Id;
+    const opponentSocketId = isPlayer1
+      ? matchInfo.player2SocketId
+      : matchInfo.player1SocketId;
+    const opponentId = isPlayer1
+      ? matchInfo.player2Id
+      : matchInfo.player1Id;
 
+    // Notify opponent
     this.server.to(opponentSocketId).emit('opponent:disconnected');
 
-    // TODO: Implement 30-second timeout for reconnection
-    // For now, just log
-    console.log(`Player disconnected from match ${matchId}`);
+    // Start 30-second reconnection timeout
+    const timeoutId = setTimeout(async () => {
+      // Check if player reconnected
+      const currentMatchInfo = this.activeMatches.get(matchId);
+      if (!currentMatchInfo) return;
+
+      const stillDisconnected = isPlayer1
+        ? !this.socketToMatch.has(currentMatchInfo.player1SocketId)
+        : !this.socketToMatch.has(currentMatchInfo.player2SocketId);
+
+      if (stillDisconnected) {
+        console.log(
+          `Player ${disconnectedPlayerId} failed to reconnect within 30s. Auto-forfeit.`,
+        );
+
+        // Auto-forfeit the disconnected player
+        try {
+          await this.gameService.forfeitMatch(matchId, disconnectedPlayerId);
+
+          // Notify opponent of victory
+          this.server.to(opponentSocketId).emit('game:over', {
+            winnerId: opponentId,
+            reason: 'opponent_disconnect_timeout',
+            duration: Math.floor((Date.now() - matchInfo.startTime) / 1000),
+          });
+
+          // Clean up
+          this.activeMatches.delete(matchId);
+          this.socketToMatch.delete(matchInfo.player1SocketId);
+          this.socketToMatch.delete(matchInfo.player2SocketId);
+        } catch (error) {
+          console.error('Error handling disconnect timeout:', error);
+        }
+      } else {
+        console.log(`Player ${disconnectedPlayerId} reconnected successfully`);
+      }
+    }, 30000); // 30 seconds
+
+    // Store timeout ID in match info for potential cancellation
+    matchInfo.disconnectTimeoutId = timeoutId;
   }
 }

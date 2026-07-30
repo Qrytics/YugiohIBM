@@ -227,8 +227,119 @@ export const useGameStore = create<GameStore>((set, get) => ({
           players: newPlayers,
         };
       });
+    } else if (card.type === 'tool') {
+      // Tool: Apply immediate effect and discard
+      set((state) => {
+        const newPlayers = [...state.players] as [PlayerState, PlayerState];
+        const newPlayer = { ...newPlayers[playerIndex] };
+
+        // Remove from hand
+        newPlayer.hand = newPlayer.hand.filter((_, i) => i !== cardIndex);
+
+        // Spend mana
+        newPlayer.currentMana -= card.cost;
+
+        // Apply tool effect (handled by EffectsEngine)
+        // Tools go directly to discard pile
+        newPlayer.discard = [...newPlayer.discard, card];
+
+        newPlayers[playerIndex] = newPlayer;
+
+        return { players: newPlayers };
+      });
+
+      // Trigger tool effect through EffectsEngine
+      const state = get();
+      state.effectsEngine.applyToolEffect(state, card, playerIndex, laneIndex);
+    } else if (card.type === 'incident') {
+      // Incident: Trigger immediate event effect and discard
+      set((state) => {
+        const newPlayers = [...state.players] as [PlayerState, PlayerState];
+        const newPlayer = { ...newPlayers[playerIndex] };
+
+        // Remove from hand
+        newPlayer.hand = newPlayer.hand.filter((_, i) => i !== cardIndex);
+
+        // Spend mana
+        newPlayer.currentMana -= card.cost;
+
+        // Incidents go directly to discard pile
+        newPlayer.discard = [...newPlayer.discard, card];
+
+        newPlayers[playerIndex] = newPlayer;
+
+        return { players: newPlayers };
+      });
+
+      // Trigger incident effect through EffectsEngine
+      const state = get();
+      state.effectsEngine.triggerIncident(state, card, playerIndex);
+    } else if (card.type === 'upgrade') {
+      // Upgrade: Attach to target employee (requires target selection)
+      // For now, upgrades are played like employees but mark as attached
+      set((state) => {
+        const newPlayers = [...state.players] as [PlayerState, PlayerState];
+        const newPlayer = { ...newPlayers[playerIndex] };
+
+        // Remove from hand
+        newPlayer.hand = newPlayer.hand.filter((_, i) => i !== cardIndex);
+
+        // Spend mana
+        newPlayer.currentMana -= card.cost;
+
+        // Store upgrade for attachment (UI will handle target selection)
+        newPlayer.pendingUpgrade = { card, laneIndex };
+
+        newPlayers[playerIndex] = newPlayer;
+
+        return { players: newPlayers };
+      });
+    } else if (card.type === 'executive') {
+      // Executive: Special legendary employees with unique mechanics
+      // Play as employee but with executive flag
+      const boardCard: BoardCard = {
+        id: `${card.id}-${Date.now()}`,
+        card,
+        currentHealth: card.health || 1,
+        currentAttack: card.attack || 0,
+        currentDefense: card.defense || 0,
+        canAttack: card.keywords.includes('rush'),
+        attackedThisTurn: false,
+        statusEffects: [],
+        isExecutive: true, // Mark as executive for special handling
+      };
+
+      set((state) => {
+        const newLanes = [...state.lanes] as [Lane, Lane, Lane, Lane];
+        newLanes[laneIndex] = {
+          ...newLanes[laneIndex],
+          cards: [...newLanes[laneIndex].cards] as [BoardCard | null, BoardCard | null],
+        };
+        newLanes[laneIndex].cards[playerIndex] = boardCard;
+
+        const newPlayers = [...state.players] as [PlayerState, PlayerState];
+        const newPlayer = { ...newPlayers[playerIndex] };
+
+        // Remove from hand
+        newPlayer.hand = newPlayer.hand.filter((_, i) => i !== cardIndex);
+
+        // Spend mana
+        newPlayer.currentMana -= card.cost;
+
+        // Add to board
+        newPlayer.board = [...newPlayer.board, boardCard];
+
+        // Increment cards played
+        newPlayer.cardsPlayedThisTurn += 1;
+
+        newPlayers[playerIndex] = newPlayer;
+
+        return {
+          lanes: newLanes,
+          players: newPlayers,
+        };
+      });
     }
-    // TODO: Handle other card types (tool, incident, upgrade, executive)
   },
 
   /**

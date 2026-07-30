@@ -127,7 +127,8 @@ export class TurnSystem {
     // Check for fatigue (no cards left)
     if (player.deck.length === 0) {
       // Fatigue damage (starts at 1, increases each time)
-      const fatigueDamage = 1; // TODO: Track fatigue count
+      player.fatigueCount = (player.fatigueCount || 0) + 1;
+      const fatigueDamage = player.fatigueCount;
       player.health = Math.max(0, player.health - fatigueDamage);
       return false;
     }
