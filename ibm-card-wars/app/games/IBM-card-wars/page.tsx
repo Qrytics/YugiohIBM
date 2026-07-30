@@ -81,6 +81,12 @@ export default function IBMCardWarsPage() {
             >
               📜 Match History
             </Link>
+            <Link
+              href="/games/IBM-card-wars/settings"
+              className="glass px-6 py-3 rounded-lg hover:bg-gray-700 hover:text-background transition-all border border-gray-500/30"
+            >
+              ⚙️ Settings
+            </Link>
           </div>
         </div>
 
