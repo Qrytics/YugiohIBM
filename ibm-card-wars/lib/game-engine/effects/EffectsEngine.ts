@@ -171,6 +171,12 @@ export class EffectsEngine {
     const targets: (BoardCard | PlayerState)[] = [];
     const sourcePlayerIndex = source?.playerIndex ?? state.currentPlayer;
 
+    // Handle string targets from Phase 2 cards - return empty array for now
+    if (typeof effect.target === 'string') {
+      console.log(`[Phase 2] String target not yet implemented: ${effect.target}`);
+      return [];
+    }
+
     switch (effect.target.type) {
       case 'all_friendly': {
         const player = state.players[sourcePlayerIndex];

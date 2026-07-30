@@ -79,7 +79,16 @@ export class TurnSystem {
     // Phase 1: Combat
     state.phase = 'combat';
     const combatEvents = CombatResolver.resolveCombatPhase(state);
-    events.push(...combatEvents);
+    // Convert CombatEvents to GameEvents
+    for (const ce of combatEvents) {
+      events.push({
+        type: ce.type === 'attack' ? 'card_attacked' : ce.type === 'damage' ? 'card_damaged' : ce.type === 'heal' ? 'card_healed' : 'card_died',
+        timestamp: Date.now(),
+        cardId: ce.sourceId,
+        targetId: ce.targetId,
+        amount: ce.amount,
+      });
+    }
 
     // Phase 2: End of turn triggers
     state.phase = 'end';

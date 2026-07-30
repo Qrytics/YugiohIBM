@@ -122,7 +122,7 @@ export function GameCanvas({
             <span className="text-foreground/70 ml-1">FPS</span>
           </div>
           <div className="text-xs text-foreground/50 mt-1">
-            {appRef.current?.renderer.type === 'webgl' ? 'WebGL' : 'Canvas'}
+            {appRef.current?.renderer.type === 1 ? 'WebGL' : 'Canvas'}
           </div>
         </div>
       )}

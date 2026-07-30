@@ -57,7 +57,19 @@ export type EffectType =
   | 'silence'
   | 'freeze'
   | 'return_to_hand'
-  | 'add_to_deck';
+  | 'add_to_deck'
+  | 'discover' // Phase 2: Choose one of three cards
+  | 'bounce' // Phase 2: Return to hand
+  | 'modify' // Phase 2: Modify card properties
+  | 'aura' // Phase 2: Continuous effect
+  | 'give_keyword' // Phase 2: Grant keyword
+  | 'reveal' // Phase 2: Reveal cards
+  | 'generate' // Phase 2: Create random cards
+  | 'refill_unused_mana' // Phase 2: Mana manipulation
+  | 'cost_reduction' // Phase 2: Reduce costs
+  | 'cost_increase' // Phase 2: Increase costs
+  | 'damage_reduction' // Phase 2: Reduce damage taken
+  | 'draw_to_count'; // Phase 2: Draw until X cards
 
 export type TargetType =
   | 'all_friendly'
@@ -83,11 +95,12 @@ export interface TargetSelector {
 }
 
 export interface Effect {
-  type: EffectType;
-  target?: TargetSelector;
+  type: EffectType | string; // Allow string types for Phase 2 extended cards
+  target?: TargetSelector | string; // Allow string targets for extended Phase 2 cards
   amount?: number;
   cardId?: string; // For summon effects
   value?: string | number; // Generic value for various effects
+  [key: string]: any; // Allow additional properties for Phase 2 extended definitions
 }
 
 export type TriggerType =
@@ -102,7 +115,8 @@ export type TriggerType =
   | 'on_attack';
 
 export interface Trigger {
-  on: TriggerType;
+  on?: TriggerType; // Optional for Phase 2 extended cards
+  event?: string; // Alternative trigger field for Phase 2 cards
   effect: Effect;
   condition?: {
     cardType?: CardType;
@@ -131,6 +145,7 @@ export interface Card {
   deathrattle?: Effect; // On death
   ongoing?: Effect; // Continuous effect while on board
   trigger?: Trigger; // Event-based triggers
+  costModifier?: any; // Phase 2: Cost modification rules
 
   // Flavor
   description: string;
