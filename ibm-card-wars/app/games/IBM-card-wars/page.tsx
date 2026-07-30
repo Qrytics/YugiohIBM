@@ -27,13 +27,19 @@ export default function IBMCardWarsPage() {
             </span>
           </div>
 
-          {/* Play Button */}
-          <div className="mt-8">
+          {/* Action Buttons */}
+          <div className="mt-8 flex gap-4 justify-center">
             <Link
               href="/games/IBM-card-wars/play"
               className="inline-block glass-strong px-12 py-6 rounded-xl font-bold text-2xl text-ibm-cyan hover:bg-ibm-cyan hover:text-background transition-all duration-300 border-2 border-ibm-cyan hover:scale-105 shadow-lg shadow-ibm-cyan/30"
             >
-              Play Now (Phase 1 Demo)
+              Play Now
+            </Link>
+            <Link
+              href="/games/IBM-card-wars/deck-builder"
+              className="inline-block glass-strong px-12 py-6 rounded-xl font-bold text-2xl text-ibm-purple hover:bg-ibm-purple hover:text-background transition-all duration-300 border-2 border-ibm-purple hover:scale-105 shadow-lg shadow-ibm-purple/30"
+            >
+              Deck Builder
             </Link>
           </div>
         </div>
@@ -82,14 +88,14 @@ export default function IBMCardWarsPage() {
               description="Game State, Mana System, 4-Lane Combat, Turn System - PLAYABLE!"
             />
             <StatusItem
-              status="pending"
+              status="completed"
               title="Phase 2: Card System & Content"
-              description="150-200 cards, 12 professions, abilities"
+              description="172 cards, 12 professions with unique mechanics - COMPLETE!"
             />
             <StatusItem
-              status="pending"
+              status="completed"
               title="Phase 3: Deck Building & Collection"
-              description="Deck builder UI, collection management"
+              description="Deck builder, filters, validation, mana curve - COMPLETE!"
             />
             <StatusItem
               status="pending"
