@@ -1,4 +1,5 @@
 import { GameCanvas } from '@/components/game/GameCanvas';
+import Link from 'next/link';
 
 export default function IBMCardWarsPage() {
   return (
@@ -24,6 +25,16 @@ export default function IBMCardWarsPage() {
             <span className="glass px-4 py-2 rounded-full text-sm">
               12 Professions
             </span>
+          </div>
+
+          {/* Play Button */}
+          <div className="mt-8">
+            <Link
+              href="/games/IBM-card-wars/play"
+              className="inline-block glass-strong px-12 py-6 rounded-xl font-bold text-2xl text-ibm-cyan hover:bg-ibm-cyan hover:text-background transition-all duration-300 border-2 border-ibm-cyan hover:scale-105 shadow-lg shadow-ibm-cyan/30"
+            >
+              Play Now (Phase 1 Demo)
+            </Link>
           </div>
         </div>
 
@@ -66,9 +77,9 @@ export default function IBMCardWarsPage() {
               description="Next.js 15, TypeScript, Tailwind, PixiJS, Folder Structure"
             />
             <StatusItem
-              status="pending"
+              status="completed"
               title="Phase 1: Core Game Engine (Offline)"
-              description="Game State, Mana System, 4-Lane Combat, Turn System"
+              description="Game State, Mana System, 4-Lane Combat, Turn System - PLAYABLE!"
             />
             <StatusItem
               status="pending"
