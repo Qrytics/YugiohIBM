@@ -28,7 +28,7 @@ export default function IBMCardWarsPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-8 flex gap-4 justify-center">
+          <div className="mt-8 flex flex-wrap gap-4 justify-center">
             <Link
               href="/games/IBM-card-wars/play"
               className="inline-block glass-strong px-12 py-6 rounded-xl font-bold text-2xl text-ibm-cyan hover:bg-ibm-cyan hover:text-background transition-all duration-300 border-2 border-ibm-cyan hover:scale-105 shadow-lg shadow-ibm-cyan/30"
@@ -40,6 +40,34 @@ export default function IBMCardWarsPage() {
               className="inline-block glass-strong px-12 py-6 rounded-xl font-bold text-2xl text-ibm-purple hover:bg-ibm-purple hover:text-background transition-all duration-300 border-2 border-ibm-purple hover:scale-105 shadow-lg shadow-ibm-purple/30"
             >
               Deck Builder
+            </Link>
+          </div>
+
+          {/* Progression Links */}
+          <div className="mt-6 flex flex-wrap gap-3 justify-center text-sm">
+            <Link
+              href="/games/IBM-card-wars/profile"
+              className="glass px-6 py-3 rounded-lg hover:bg-ibm-blue hover:text-background transition-all border border-ibm-blue/30"
+            >
+              👤 Profile
+            </Link>
+            <Link
+              href="/games/IBM-card-wars/collection"
+              className="glass px-6 py-3 rounded-lg hover:bg-ibm-blue hover:text-background transition-all border border-ibm-blue/30"
+            >
+              📚 Collection
+            </Link>
+            <Link
+              href="/games/IBM-card-wars/packs"
+              className="glass px-6 py-3 rounded-lg hover:bg-ibm-purple hover:text-background transition-all border border-ibm-purple/30"
+            >
+              📦 Packs
+            </Link>
+            <Link
+              href="/games/IBM-card-wars/missions"
+              className="glass px-6 py-3 rounded-lg hover:bg-ibm-cyan hover:text-background transition-all border border-ibm-cyan/30"
+            >
+              🎯 Missions
             </Link>
           </div>
         </div>
@@ -98,9 +126,24 @@ export default function IBMCardWarsPage() {
               description="Deck builder, filters, validation, mana curve - COMPLETE!"
             />
             <StatusItem
+              status="completed"
+              title="Phase 4: Backend & Authentication"
+              description="Database, NextAuth, profiles, decks - COMPLETE!"
+            />
+            <StatusItem
+              status="completed"
+              title="Phase 5: Multiplayer & Game Server"
+              description="NestJS server, WebSocket, matchmaking, authoritative logic - COMPLETE!"
+            />
+            <StatusItem
+              status="completed"
+              title="Phase 6: Progression & Rewards"
+              description="Leveling, packs, missions, collection tracking - COMPLETE!"
+            />
+            <StatusItem
               status="pending"
-              title="Phase 4+: Backend, Multiplayer, Polish"
-              description="Database, authentication, real-time multiplayer, progression"
+              title="Phase 7+: Polish & Deployment"
+              description="Animations, sound effects, leaderboards, tournaments"
             />
           </div>
         </div>

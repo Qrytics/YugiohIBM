@@ -182,8 +182,8 @@ export class GameService {
     const winnerXP = baseXP + winBonus + turnBonus;
     const loserXP = baseXP + turnBonus;
 
-    // Update profiles
-    await Promise.all([
+    // Update profiles and get updated values
+    const [updatedWinnerProfile, updatedLoserProfile] = await Promise.all([
       this.prisma.profile.update({
         where: { userId: winnerId },
         data: {
@@ -202,12 +202,116 @@ export class GameService {
       }),
     ]);
 
+    // CHECK FOR LEVEL UPS AND AWARD REWARDS
+    await this.handleLevelUp(winnerId, winnerProfile.xp, updatedWinnerProfile.xp);
+    await this.handleLevelUp(loserId, loserProfile.xp, updatedLoserProfile.xp);
+
+    // CHECK FOR RANK CHANGES
+    await this.handleRankChange(winnerId, updatedWinnerProfile.mmr);
+    await this.handleRankChange(loserId, updatedLoserProfile.mmr);
+
     // Find deck IDs (we need to store this at match creation)
     // For now, we'll handle this in the gateway where we have access to deck IDs
 
     // Clean up
     await this.redis.deleteGameState(matchId);
     this.engines.delete(matchId);
+  }
+
+  /**
+   * Handle level up and award rewards
+   */
+  private async handleLevelUp(
+    userId: string,
+    oldXP: number,
+    newXP: number,
+  ): Promise<void> {
+    // Simple level calculation (level * 100 XP per level)
+    const getLevelFromXP = (xp: number): number => {
+      if (xp < 0) return 1;
+      for (let level = 1; level <= 50; level++) {
+        const xpForNextLevel = (level * (level + 1) / 2) * 100;
+        if (xp < xpForNextLevel) return level;
+      }
+      return 50;
+    };
+
+    const oldLevel = getLevelFromXP(oldXP);
+    const newLevel = getLevelFromXP(newXP);
+
+    if (newLevel > oldLevel) {
+      // Update level in database
+      await this.prisma.profile.update({
+        where: { userId },
+        data: { level: newLevel },
+      });
+
+      // Award packs for each level gained
+      const levelRewards: Record<number, { packType: string; quantity: number }[]> = {
+        2: [{ packType: 'standard', quantity: 1 }],
+        3: [{ packType: 'standard', quantity: 1 }],
+        4: [{ packType: 'standard', quantity: 1 }],
+        5: [{ packType: 'rare', quantity: 1 }],
+        10: [{ packType: 'rare', quantity: 2 }],
+        15: [{ packType: 'rare', quantity: 2 }],
+        20: [{ packType: 'epic', quantity: 1 }],
+        25: [{ packType: 'rare', quantity: 3 }],
+        30: [{ packType: 'epic', quantity: 2 }],
+        40: [{ packType: 'epic', quantity: 3 }],
+        50: [{ packType: 'epic', quantity: 5 }],
+      };
+
+      for (let level = oldLevel + 1; level <= newLevel; level++) {
+        const rewards = levelRewards[level];
+        if (rewards) {
+          for (const reward of rewards) {
+            for (let i = 0; i < reward.quantity; i++) {
+              await this.prisma.pack.create({
+                data: {
+                  userId,
+                  type: reward.packType,
+                  source: `level_${level}`,
+                },
+              });
+            }
+          }
+        }
+      }
+
+      console.log(`Player ${userId} leveled up from ${oldLevel} to ${newLevel}`);
+    }
+  }
+
+  /**
+   * Handle rank changes based on MMR
+   */
+  private async handleRankChange(userId: string, mmr: number): Promise<void> {
+    // Get rank from MMR
+    const getRankFromMMR = (mmr: number): string => {
+      if (mmr >= 3500) return 'grandmaster';
+      if (mmr >= 3000) return 'master';
+      if (mmr >= 2500) return 'diamond';
+      if (mmr >= 2000) return 'platinum';
+      if (mmr >= 1500) return 'gold';
+      if (mmr >= 1000) return 'silver';
+      return 'bronze';
+    };
+
+    const newRank = getRankFromMMR(mmr);
+
+    // Get current rank
+    const profile = await this.prisma.profile.findUnique({
+      where: { userId },
+      select: { rank: true },
+    });
+
+    if (profile && profile.rank !== newRank) {
+      await this.prisma.profile.update({
+        where: { userId },
+        data: { rank: newRank },
+      });
+      console.log(`Player ${userId} rank changed to ${newRank} (MMR: ${mmr})`);
+    }
   }
 
   /**
