@@ -43,6 +43,8 @@ model User {
   profile       Profile?
   decks         Deck[]
   collection    CardOwnership[]
+  packs         Pack[]
+  missions      Mission[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -111,4 +113,33 @@ model Match {
   @@index([player1Id])
   @@index([player2Id])
   @@index([createdAt])
+}
+
+model Pack {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   @default("standard")  // "standard", "rare", "epic"
+  source      String   // "level_reward", "mission_reward", "purchase"
+  createdAt   DateTime @default(now())
+  openedAt    DateTime?
+
+  @@index([userId])
+}
+
+model Mission {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // "daily" | "weekly"
+  missionId   String   // e.g., "play_3_games", "win_5_matches"
+  progress    Int      @default(0)
+  goal        Int
+  completed   Boolean  @default(false)
+  claimed     Boolean  @default(false)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
