@@ -5,7 +5,11 @@ import { TurnSystem } from '@/lib/game-engine/rules/TurnSystem';
 import { SimpleCard } from './Card/SimpleCard';
 import { useState } from 'react';
 
-export function GameBoard() {
+interface GameBoardProps {
+  mode?: 'offline' | 'multiplayer';
+}
+
+export function GameBoard({ mode = 'offline' }: GameBoardProps) {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
 
   // Subscribe to individual state slices to avoid infinite loop
@@ -20,6 +24,9 @@ export function GameBoard() {
   const playCard = useGameStore((state) => state.playCard);
   const endTurn = useGameStore((state) => state.endTurn);
   const resetGame = useGameStore((state) => state.resetGame);
+
+  // Import socket manager for multiplayer mode
+  const socketManager = mode === 'multiplayer' ? require('@/lib/multiplayer/SocketManager').getSocketManager() : null;
 
   const currentPlayer = players[currentPlayerIndex];
   const opponent = players[currentPlayerIndex === 0 ? 1 : 0];
@@ -38,7 +45,18 @@ export function GameBoard() {
   const handleLaneClick = (laneIndex: number) => {
     console.log('Lane clicked:', laneIndex, 'Selected card:', selectedCard);
     if (selectedCard) {
-      playCard(currentPlayer.id, selectedCard, laneIndex);
+      if (mode === 'multiplayer' && socketManager) {
+        // Send action to server in multiplayer mode
+        socketManager.sendAction({
+          type: 'play_card',
+          playerId: currentPlayer.id,
+          cardId: selectedCard,
+          laneIndex,
+        });
+      } else {
+        // Execute locally in offline mode
+        playCard(currentPlayer.id, selectedCard, laneIndex);
+      }
       setSelectedCard(null);
     }
   };
@@ -46,7 +64,16 @@ export function GameBoard() {
   // End turn button
   const handleEndTurn = () => {
     console.log('End turn clicked');
-    endTurn();
+    if (mode === 'multiplayer' && socketManager) {
+      // Send action to server in multiplayer mode
+      socketManager.sendAction({
+        type: 'end_turn',
+        playerId: currentPlayer.id,
+      });
+    } else {
+      // Execute locally in offline mode
+      endTurn();
+    }
   };
 
   // Check for game over
