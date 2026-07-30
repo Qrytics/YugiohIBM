@@ -69,6 +69,18 @@ export default function IBMCardWarsPage() {
             >
               🎯 Missions
             </Link>
+            <Link
+              href="/games/IBM-card-wars/leaderboards"
+              className="glass px-6 py-3 rounded-lg hover:bg-ibm-cyan hover:text-background transition-all border border-ibm-cyan/30"
+            >
+              🏆 Leaderboards
+            </Link>
+            <Link
+              href="/games/IBM-card-wars/history"
+              className="glass px-6 py-3 rounded-lg hover:bg-ibm-blue hover:text-background transition-all border border-ibm-blue/30"
+            >
+              📜 Match History
+            </Link>
           </div>
         </div>
 
