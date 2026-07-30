@@ -27,7 +27,21 @@ export class EffectsEngine {
       case 'destroy':
         this.resolveDestroy(state, effect, source);
         break;
-      // TODO: Implement more effect types
+      case 'freeze':
+        this.resolveFreeze(state, effect, source);
+        break;
+      case 'silence':
+        this.resolveSilence(state, effect, source);
+        break;
+      case 'taunt':
+        this.resolveTaunt(state, effect, source);
+        break;
+      case 'divine_shield':
+        this.resolveDivineShield(state, effect, source);
+        break;
+      case 'lifesteal':
+        this.resolveLifesteal(state, effect, source);
+        break;
       default:
         console.warn(`Unimplemented effect type: ${effect.type}`);
     }
@@ -275,6 +289,107 @@ export class EffectsEngine {
       lane.cards[card.playerIndex] = null;
     }
 
-    // TODO: Trigger deathrattle
+    // Trigger deathrattle if card has it and is not silenced
+    if (card.deathrattle && !card.isSilenced) {
+      this.resolve(state, card.deathrattle, card);
+    }
+  }
+
+  /**
+   * Freeze target(s)
+   */
+  private static resolveFreeze(
+    state: GameState,
+    effect: Effect,
+    source?: BoardCard
+  ): void {
+    const targets = this.findTargets(state, effect, source);
+    for (const target of targets) {
+      if ('isFrozen' in target) {
+        const card = target as BoardCard;
+        card.isFrozen = true;
+        // Add status effect with duration
+        if (!card.statusEffects) card.statusEffects = [];
+        card.statusEffects.push({
+          type: 'frozen',
+          duration: 1,
+          appliedBy: source?.instanceId || 'unknown',
+        });
+      }
+    }
+  }
+
+  /**
+   * Silence target(s) - remove all abilities and buffs
+   */
+  private static resolveSilence(
+    state: GameState,
+    effect: Effect,
+    source?: BoardCard
+  ): void {
+    const targets = this.findTargets(state, effect, source);
+    for (const target of targets) {
+      if ('isSilenced' in target) {
+        const card = target as BoardCard;
+        card.isSilenced = true;
+        card.buffs = []; // Remove all buffs
+        card.statusEffects = []; // Remove all status effects
+        card.hasTaunt = false;
+        card.hasDivineShield = false;
+      }
+    }
+  }
+
+  /**
+   * Grant taunt to target(s)
+   */
+  private static resolveTaunt(
+    state: GameState,
+    effect: Effect,
+    source?: BoardCard
+  ): void {
+    const targets = this.findTargets(state, effect, source);
+    for (const target of targets) {
+      if ('hasTaunt' in target) {
+        const card = target as BoardCard;
+        card.hasTaunt = true;
+      }
+    }
+  }
+
+  /**
+   * Grant divine shield to target(s)
+   */
+  private static resolveDivineShield(
+    state: GameState,
+    effect: Effect,
+    source?: BoardCard
+  ): void {
+    const targets = this.findTargets(state, effect, source);
+    for (const target of targets) {
+      if ('hasDivineShield' in target) {
+        const card = target as BoardCard;
+        card.hasDivineShield = true;
+      }
+    }
+  }
+
+  /**
+   * Grant lifesteal to target(s)
+   */
+  private static resolveLifesteal(
+    state: GameState,
+    effect: Effect,
+    source?: BoardCard
+  ): void {
+    const targets = this.findTargets(state, effect, source);
+    for (const target of targets) {
+      if ('keywords' in target) {
+        const card = target as BoardCard;
+        if (!card.keywords.includes('lifesteal')) {
+          card.keywords = [...card.keywords, 'lifesteal'];
+        }
+      }
+    }
   }
 }

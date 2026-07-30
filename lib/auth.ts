@@ -47,6 +47,23 @@ export const authOptions: NextAuthOptions = {
               quantity: 2,
             })),
           });
+
+          // Create starter deck automatically
+          await prisma.deck.create({
+            data: {
+              userId: user!.id,
+              name: 'Starter Deck',
+              profession: 'neutral',
+              cards: {
+                create: neutralCards.map((cardId) => ({
+                  cardId,
+                  quantity: 2,
+                })),
+              },
+            },
+          });
+
+          console.log(`Created new user ${user.email} with starter cards and deck`);
         }
 
         return {

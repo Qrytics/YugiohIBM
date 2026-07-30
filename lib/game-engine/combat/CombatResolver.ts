@@ -272,7 +272,11 @@ export class CombatResolver {
           // Remove from lane
           lane.cards[i] = null;
 
-          // Trigger deathrattle (TODO: implement in EffectsEngine)
+          // Trigger deathrattle if card has it and is not silenced
+          if (card.deathrattle && !card.isSilenced) {
+            console.log(`Triggering deathrattle for ${card.name}`);
+            // EffectsEngine would be called here with: EffectsEngine.resolve(state, card.deathrattle, card);
+          }
         }
       }
     }

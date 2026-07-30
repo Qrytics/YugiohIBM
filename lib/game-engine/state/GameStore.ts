@@ -227,8 +227,118 @@ export const useGameStore = create<GameStore>((set, get) => ({
           players: newPlayers,
         };
       });
+    } else if (card.type === 'tool') {
+      // Tool cards: one-time effect, then discarded
+      set((state) => {
+        const newPlayers = [...state.players] as [PlayerState, PlayerState];
+        const newPlayer = { ...newPlayers[playerIndex] };
+
+        // Remove from hand
+        newPlayer.hand = newPlayer.hand.filter((_, i) => i !== cardIndex);
+
+        // Spend mana
+        newPlayer.currentMana -= card.cost;
+
+        // Move to discard
+        newPlayer.graveyard.push(card);
+
+        // Apply tool effect if it exists
+        if (card.effect) {
+          // TODO: Call EffectsEngine.resolve(state, card.effect)
+          // For now, just log
+          console.log(`Applied tool effect: ${card.name}`);
+        }
+
+        newPlayers[playerIndex] = newPlayer;
+
+        return { players: newPlayers };
+      });
+    } else if (card.type === 'incident') {
+      // Incident cards: immediate event effect, then discarded
+      set((state) => {
+        const newPlayers = [...state.players] as [PlayerState, PlayerState];
+        const newPlayer = { ...newPlayers[playerIndex] };
+
+        // Remove from hand
+        newPlayer.hand = newPlayer.hand.filter((_, i) => i !== cardIndex);
+
+        // Spend mana
+        newPlayer.currentMana -= card.cost;
+
+        // Move to discard
+        newPlayer.graveyard.push(card);
+
+        // Trigger incident effect if it exists
+        if (card.effect) {
+          // TODO: Call EffectsEngine.resolve(state, card.effect)
+          console.log(`Triggered incident: ${card.name}`);
+        }
+
+        newPlayers[playerIndex] = newPlayer;
+
+        return { players: newPlayers };
+      });
+    } else if (card.type === 'upgrade') {
+      // Upgrade cards: attach to target employee (requires target selection)
+      // Store in pendingUpgrade state for target selection
+      set((state) => ({
+        pendingUpgrade: {
+          card,
+          cardIndex,
+          playerIndex,
+        },
+      }));
+    } else if (card.type === 'executive') {
+      // Executive cards: play as employee with special executive flag
+      const boardCard: BoardCard = {
+        ...card,
+        instanceId: `${card.id}_${Date.now()}_${Math.random()}`,
+        currentHealth: card.health,
+        currentAttack: card.attack,
+        canAttack: false,
+        hasAttacked: false,
+        hasTaunt: card.keywords.includes('taunt'),
+        hasDivineShield: card.keywords.includes('divine_shield'),
+        isImmune: card.keywords.includes('immune'),
+        isFrozen: false,
+        isSilenced: false,
+        buffs: [],
+        laneIndex,
+        playerIndex,
+        isExecutive: true, // Mark as executive
+      };
+
+      set((state) => {
+        const newLanes = [...state.lanes] as [Lane, Lane, Lane, Lane];
+        newLanes[laneIndex] = {
+          ...newLanes[laneIndex],
+          cards: [...newLanes[laneIndex].cards] as [BoardCard | null, BoardCard | null],
+        };
+        newLanes[laneIndex].cards[playerIndex] = boardCard;
+
+        const newPlayers = [...state.players] as [PlayerState, PlayerState];
+        const newPlayer = { ...newPlayers[playerIndex] };
+
+        // Remove from hand
+        newPlayer.hand = newPlayer.hand.filter((_, i) => i !== cardIndex);
+
+        // Spend mana
+        newPlayer.currentMana -= card.cost;
+
+        // Add to board
+        newPlayer.board = [...newPlayer.board, boardCard];
+
+        // Increment cards played
+        newPlayer.cardsPlayedThisTurn += 1;
+
+        newPlayers[playerIndex] = newPlayer;
+
+        return {
+          lanes: newLanes,
+          players: newPlayers,
+        };
+      });
     }
-    // TODO: Handle other card types (tool, incident, upgrade, executive)
   },
 
   /**

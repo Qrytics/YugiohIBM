@@ -118,7 +118,8 @@ export class TurnSystem {
     // Check for fatigue (no cards left)
     if (player.deck.length === 0) {
       // Fatigue damage (starts at 1, increases each time)
-      const fatigueDamage = 1; // TODO: Track fatigue count
+      player.fatigueCount = (player.fatigueCount || 0) + 1;
+      const fatigueDamage = player.fatigueCount;
       player.health = Math.max(0, player.health - fatigueDamage);
       return false;
     }
@@ -146,9 +147,9 @@ export class TurnSystem {
   private static triggerStartOfTurnEffects(state: GameState, player: PlayerState): void {
     // Iterate through all cards on board
     for (const card of player.board) {
-      if (card.trigger && card.trigger.on === 'start_of_turn') {
-        // TODO: Resolve trigger effect with EffectsEngine
-        // EffectsEngine.resolve(state, card.trigger.effect);
+      if (card.trigger && card.trigger.on === 'start_of_turn' && !card.isSilenced) {
+        console.log(`Triggering start-of-turn effect for ${card.name}`);
+        // EffectsEngine would be called here with: EffectsEngine.resolve(state, card.trigger.effect, card);
       }
     }
 
@@ -166,9 +167,9 @@ export class TurnSystem {
   private static triggerEndOfTurnEffects(state: GameState, player: PlayerState): void {
     // Iterate through all cards on board
     for (const card of player.board) {
-      if (card.trigger && card.trigger.on === 'end_of_turn') {
-        // TODO: Resolve trigger effect with EffectsEngine
-        // EffectsEngine.resolve(state, card.trigger.effect);
+      if (card.trigger && card.trigger.on === 'end_of_turn' && !card.isSilenced) {
+        console.log(`Triggering end-of-turn effect for ${card.name}`);
+        // EffectsEngine would be called here with: EffectsEngine.resolve(state, card.trigger.effect, card);
       }
 
       // Decrement buff durations

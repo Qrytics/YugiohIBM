@@ -210,12 +210,69 @@ export class GameService {
     await this.handleRankChange(winnerId, updatedWinnerProfile.mmr);
     await this.handleRankChange(loserId, updatedLoserProfile.mmr);
 
+    // UPDATE MISSION PROGRESS
+    await this.updateMissionProgress(winnerId, 'play', 1);
+    await this.updateMissionProgress(winnerId, 'win', 1);
+    await this.updateMissionProgress(loserId, 'play', 1);
+
     // Find deck IDs (we need to store this at match creation)
     // For now, we'll handle this in the gateway where we have access to deck IDs
 
     // Clean up
     await this.redis.deleteGameState(matchId);
     this.engines.delete(matchId);
+  }
+
+  /**
+   * Update mission progress for a user
+   */
+  private async updateMissionProgress(
+    userId: string,
+    actionType: 'play' | 'win',
+    amount: number,
+  ): Promise<void> {
+    try {
+      // Find all active uncompleted missions for this user
+      const activeMissions = await this.prisma.mission.findMany({
+        where: {
+          userId,
+          completed: false,
+          expiresAt: { gt: new Date() },
+        },
+      });
+
+      // Update progress based on action type
+      for (const mission of activeMissions) {
+        let shouldUpdate = false;
+
+        // Check if mission matches action type
+        if (actionType === 'play' && mission.missionId.includes('play')) {
+          shouldUpdate = true;
+        } else if (actionType === 'win' && mission.missionId.includes('win')) {
+          shouldUpdate = true;
+        }
+
+        if (shouldUpdate) {
+          const newProgress = mission.progress + amount;
+          const completed = newProgress >= mission.goal;
+
+          await this.prisma.mission.update({
+            where: { id: mission.id },
+            data: {
+              progress: Math.min(newProgress, mission.goal),
+              completed,
+            },
+          });
+
+          if (completed) {
+            console.log(`Mission ${mission.missionId} completed for user ${userId}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to update mission progress:', error);
+      // Don't throw - mission tracking is non-critical
+    }
   }
 
   /**
